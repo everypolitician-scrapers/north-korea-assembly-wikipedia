@@ -29,7 +29,7 @@ def scrape_list(url)
         area_id: tds[0].text.tidy,
         area: tds[1].text.tidy,
         wikiname: tds[2].xpath('.//a[not(@class="new")]/@title').text,
-        term: 14,
+        term: 13,
         source: url,
     }
     ScraperWiki.save_sqlite([:id, :term], data)
