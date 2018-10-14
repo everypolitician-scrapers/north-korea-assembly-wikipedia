@@ -31,5 +31,5 @@ def scrape_list(url)
   end
 end
 
-ScraperWiki.sqliteexecute('DELETE FROM data') rescue nil
+ScraperWiki.sqliteexecute('DROP TABLE data') rescue nil
 scrape_list('https://en.wikipedia.org/wiki/North_Korean_parliamentary_election,_2014')
