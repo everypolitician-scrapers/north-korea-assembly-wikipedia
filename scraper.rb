@@ -19,7 +19,7 @@ def scrape_list(url)
     tds = tr.css('td')
     data = {
       id:       '14-%s' % tds[0].text.tidy,
-      name:     tds[2].text.tidy,
+      name:     tds[2].css('a').text.tidy,
       area_id:  tds[0].text.tidy,
       area:     tds[1].text.tidy,
       wikiname: tds[2].xpath('.//a[not(@class="new")]/@title').text,
