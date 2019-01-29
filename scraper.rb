@@ -1,5 +1,4 @@
 #!/bin/env ruby
-# encoding: utf-8
 # frozen_string_literal: true
 
 require 'pry'
@@ -9,27 +8,57 @@ require 'scraperwiki'
 require 'open-uri/cached'
 OpenURI::Cache.cache_path = '.cache'
 
-def noko_for(url)
-  Nokogiri::HTML(open(url).read)
-end
+class MembersPage < Scraped::HTML
+  # decorator WikidataIdsDecorator::Links
 
-def scrape_list(url)
-  noko = noko_for(url)
-  noko.xpath('//h3[span[@id="Elected_members"]]/following-sibling::table[1]//tr[td]').each do |tr|
-    tds = tr.css('td')
-    data = {
-      id:       '14-%s' % tds[0].text.tidy,
-      name:     tds[2].css('a').text.tidy,
-      area_id:  tds[0].text.tidy,
-      area:     tds[1].text.tidy,
-      wikiname: tds[2].xpath('.//a[not(@class="new")]/@title').text,
-      term:     13,
-      source:   url,
-    }
-    puts data.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h if ENV['MORPH_DEBUG']
-    ScraperWiki.save_sqlite(%i(id term), data)
+  field :members do
+    members_table.flat_map do |table|
+      table.xpath('.//tr[td]').map { |tr| data = fragment(tr => MemberRow).to_h }
+    end
+  end
+
+  private
+
+  def members_table
+    noko.xpath('//h3[span[@id="Elected_members"]]/following-sibling::table[1]')
   end
 end
 
-ScraperWiki.sqliteexecute('DROP TABLE data') rescue nil
-scrape_list('https://en.wikipedia.org/wiki/North_Korean_parliamentary_election,_2014')
+class MemberRow < Scraped::HTML
+  field :name do
+    tds[2].css('a').text.tidy
+  end
+
+  field :id do
+    '14-%s' % tds[0].text.tidy
+  end
+
+  field :area do
+    tds[1].text.tidy
+  end
+
+  field :area_id do
+    tds[0].text.tidy
+  end
+
+  field :term do
+    13
+  end
+
+  field :wikiname do
+    tds[2].xpath('.//a[not(@class="new")]/@title').text
+  end
+
+  field :source do
+    url
+  end
+
+  private
+
+  def tds
+    noko.css('td')
+  end
+end
+
+url = 'https://en.wikipedia.org/wiki/North_Korean_parliamentary_election,_2014'
+Scraped::Scraper.new(url => MembersPage).store(:members, index: %i[name area_id])
