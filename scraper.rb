@@ -27,7 +27,7 @@ end
 
 class MemberRow < Scraped::HTML
   field :name do
-    tds[2].css('a').text.tidy
+    name_node.text.tidy
   end
 
   field :id do
@@ -58,6 +58,10 @@ class MemberRow < Scraped::HTML
 
   def tds
     noko.css('td')
+  end
+
+  def name_node
+    tds[2].at_css('a') || tds[2].xpath('text()')
   end
 end
 
